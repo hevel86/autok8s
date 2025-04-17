@@ -1,0 +1,46 @@
+---
+- name: Set disk passthrough for node0
+  shell: "qm set {{ hostvars['kube0']['kube0_vmid'] }} -scsi1 {{ disk_passthrough.kube0.path }},backup=0"
+  delegate_to: "{{ disk_passthrough.kube0.node }}"
+  register: passthrough_kube0
+  changed_when: passthrough_kube0.rc == 0
+  failed_when: false
+  tags: disk_passthrough
+
+- name: Set USB passthrough for node1
+  shell: "qm set {{ hostvars['kube1']['kube1_vmid'] }} -usb0 host={{ disk_passthrough.kube1.vendor_product }}"
+  delegate_to: "{{ disk_passthrough.kube1.node }}"
+  register: passthrough_kube1
+  changed_when: passthrough_kube1.rc == 0
+  failed_when: false
+  tags: disk_passthrough
+
+- name: Set USB passthrough for node2
+  shell: "qm set {{ hostvars['kube2']['kube2_vmid'] }} -usb0 host={{ disk_passthrough.kube2.vendor_product }}"
+  delegate_to: "{{ disk_passthrough.kube2.node }}"
+  register: passthrough_kube2
+  changed_when: passthrough_kube2.rc == 0
+  failed_when: false
+  tags: disk_passthrough
+
+- name: Restart VMs to apply passthrough
+  shell: "qm shutdown {{ item.vmid }} && sleep 5 && qm start {{ item.vmid }}"
+  delegate_to: "{{ item.node }}"
+  loop:
+    - { node: "{{ disk_passthrough.kube0.node }}", vmid: "{{ hostvars['kube0']['kube0_vmid'] }}" }
+    - { node: "{{ disk_passthrough.kube1.node }}", vmid: "{{ hostvars['kube1']['kube1_vmid'] }}" }
+    - { node: "{{ disk_passthrough.kube2.node }}", vmid: "{{ hostvars['kube2']['kube2_vmid'] }}" }
+  register: restart_vms
+  changed_when: restart_vms.rc == 0
+  failed_when: false
+  tags: disk_passthrough
+
+- name: Wait for VMs to come back online
+  wait_for:
+    host: "{{ hostvars[item]['ansible_host'] }}"
+    port: 22
+    state: started
+    delay: 10
+    timeout: 300
+  loop: "{{ groups['kube_masters'] }}"
+  tags: disk_passthrough

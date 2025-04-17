@@ -1,0 +1,32 @@
+---
+- name: Apply common configuration
+  hosts: all
+  become: true
+  roles:
+    - common
+  tags:
+    - common
+
+- name: Configure disk passthrough
+  hosts: proxmox_nodes
+  become: true
+  roles:
+    - disk_passthrough
+  tags:
+    - disk_passthrough
+
+- name: Setup MicroK8s cluster
+  hosts: kube_masters
+  become: true
+  roles:
+    - microk8s
+  tags:
+    - microk8s
+
+- name: Setup MicroCeph storage
+  hosts: kube_masters
+  become: true
+  roles:
+    - microceph
+  tags:
+    - microceph

@@ -1,0 +1,6 @@
+---
+- name: Setup MicroK8s cluster
+  hosts: kube_masters
+  become: true
+  roles:
+    - microk8s

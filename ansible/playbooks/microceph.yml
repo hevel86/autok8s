@@ -1,0 +1,6 @@
+---
+- name: Setup MicroCeph storage
+  hosts: kube_masters
+  become: true
+  roles:
+    - microceph

@@ -1,0 +1,31 @@
+---
+- name: Update apt cache
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+  tags: common
+
+- name: Install common packages
+  apt:
+    name:
+      - snapd
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg
+      - lsb-release
+      - python3-pip
+      - lvm2
+      - nfs-common
+    state: present
+  tags: common
+
+- name: Create /etc/hosts entries
+  blockinfile:
+    path: /etc/hosts
+    block: |
+      10.0.0.31 kube0
+      10.0.0.32 kube1
+      10.0.0.33 kube2
+    marker: "# {mark} ANSIBLE MANAGED BLOCK - KUBE HOSTS"
+  tags: common

@@ -1,0 +1,11 @@
+---
+disk_passthrough:
+  kube0:
+    node: "node0"
+    path: "/dev/disk/by-id/ata-Seagate_IronWolf_ZA2000NM10002-2ZG103_7TD003Q9"
+  kube1:
+    node: "node1"
+    vendor_product: "174c:55aa"
+  kube2:
+    node: "node2"
+    vendor_product: "174c:55aa"

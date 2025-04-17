@@ -1,0 +1,88 @@
+---
+- name: Install MicroCeph
+  snap:
+    name: microceph
+    classic: yes
+    channel: latest/stable
+  tags: microceph
+
+# First node tasks
+- block:
+  - name: Initialize MicroCeph on first node
+    command: microceph cluster bootstrap
+    register: ceph_bootstrap
+    changed_when: "'Created new cluster' in ceph_bootstrap.stdout"
+    failed_when: false
+  
+  - name: Get join token from first node
+    command: microceph cluster add
+    register: ceph_join_token
+    changed_when: false
+  
+  - name: Set join token fact
+    set_fact:
+      ceph_token: "{{ ceph_join_token.stdout_lines | select('search', 'microceph cluster join') | first }}"
+  when: inventory_hostname == groups['kube_masters'][0]
+  tags: microceph
+
+# Other nodes tasks
+- block:
+  - name: Get join token from first node
+    set_fact:
+      ceph_token: "{{ hostvars[groups['kube_masters'][0]]['ceph_token'] }}"
+  
+  - name: Join other nodes to MicroCeph cluster
+    command: "{{ ceph_token }}"
+    register: ceph_join_result
+    changed_when: "'Added' in ceph_join_result.stdout"
+    failed_when: false
+  when: inventory_hostname != groups['kube_masters'][0]
+  tags: microceph
+
+- name: Wait for cluster to stabilize
+  pause:
+    seconds: 30
+  tags: microceph
+
+- name: List available disks
+  command: lsblk -o NAME,SIZE,VENDOR,MODEL,SERIAL
+  register: disk_list
+  changed_when: false
+  tags: microceph
+
+- name: Show disks for reference
+  debug:
+    var: disk_list.stdout_lines
+  tags: microceph
+
+- name: Add OSDs to MicroCeph
+  command: "microceph disk add {{ microceph_expected_drives[inventory_hostname.split('.')[0]] }} --wipe"
+  register: add_osd
+  changed_when: "'Added' in add_osd.stdout"
+  failed_when: false
+  tags: microceph
+
+- name: Wait for OSDs to start
+  pause:
+    seconds: 30
+  tags: microceph
+
+- name: Check MicroCeph status
+  command: microceph status
+  register: ceph_status
+  changed_when: false
+  when: inventory_hostname == groups['kube_masters'][0]
+  tags: microceph
+
+- name: Show MicroCeph status
+  debug:
+    var: ceph_status.stdout_lines
+  when: inventory_hostname == groups['kube_masters'][0]
+  tags: microceph
+
+- name: Configure MicroK8s to use MicroCeph
+  command: microk8s enable ceph
+  register: enable_ceph
+  changed_when: "'Addon' in enable_ceph.stdout"
+  when: inventory_hostname == groups['kube_masters'][0]
+  tags: microceph

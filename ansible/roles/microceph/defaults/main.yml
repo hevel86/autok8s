@@ -1,0 +1,5 @@
+---
+microceph_expected_drives:
+  kube0: "/dev/sdb"
+  kube1: "/dev/sdb"  # This is expected to be the USB drive, adjust if needed
+  kube2: "/dev/sdb"  # This is expected to be the USB drive, adjust if needed

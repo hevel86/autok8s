@@ -1,0 +1,76 @@
+---
+- name: Install MicroK8s
+  snap:
+    name: microk8s
+    classic: yes
+    channel: "{{ microk8s_channel }}"
+  register: microk8s_install
+  tags: microk8s
+
+- name: Add user to microk8s group
+  user:
+    name: "{{ ansible_user }}"
+    groups: microk8s
+    append: yes
+  tags: microk8s
+
+- name: Create .kube directory
+  file:
+    path: "/home/{{ ansible_user }}/.kube"
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0755'
+  tags: microk8s
+
+- name: Wait for MicroK8s to be ready
+  command: microk8s status --wait-ready
+  changed_when: false
+  register: microk8s_status
+  until: microk8s_status.rc == 0
+  retries: 10
+  delay: 10
+  tags: microk8s
+
+# First node tasks
+- block:
+  - name: Get join command from first node
+    command: microk8s add-node --format short
+    register: join_command
+    changed_when: false
+
+  - name: Set join command fact
+    set_fact:
+      cluster_join_command: "{{ join_command.stdout_lines[0] }}"
+
+  - name: Enable MicroK8s addons
+    command: "microk8s enable {{ item }}"
+    loop: "{{ microk8s_addons }}"
+    register: enable_addons
+    changed_when: "'Addon' in enable_addons.stdout"
+  when: inventory_hostname == groups['kube_masters'][0]
+  tags: microk8s
+
+# Other nodes tasks
+- block:
+  - name: Get join command from first node
+    set_fact:
+      cluster_join_command: "{{ hostvars[groups['kube_masters'][0]]['cluster_join_command'] }}"
+
+  - name: Join other nodes to cluster
+    command: "{{ cluster_join_command }}"
+    register: join_result
+    changed_when: "'has joined the cluster' in join_result.stdout"
+    failed_when: false
+  when: inventory_hostname != groups['kube_masters'][0]
+  tags: microk8s
+
+- name: Verify cluster status
+  command: microk8s kubectl get nodes
+  changed_when: false
+  register: get_nodes
+  until: groups['kube_masters'] | length == get_nodes.stdout_lines | length - 1
+  retries: 5
+  delay: 10
+  when: inventory_hostname == groups['kube_masters'][0]
+  tags: microk8s

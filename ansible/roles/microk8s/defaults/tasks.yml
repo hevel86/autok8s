@@ -1,0 +1,7 @@
+---
+microk8s_channel: "1.28/stable"
+microk8s_addons:
+  - dns
+  - storage
+  - ingress
+  - metrics-server
