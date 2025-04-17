@@ -1,3 +1,7 @@
+###############################################################################
+# Clone your ubuntu-cloud template (VMID 9001, name "ubuntu-cloud")
+###############################################################################
+
 locals {
   kube_nodes = ["node0", "node1", "node2"]
   mac_addrs  = [
@@ -10,37 +14,41 @@ locals {
 resource "proxmox_vm_qemu" "kube_node" {
   count       = length(local.kube_nodes)
   name        = "kube${count.index}"
-  desc        = "Kubernetes node ${count.index}"
+  desc        = "Kubernetes node ${count.index} - Created by Terraform"
   target_node = local.kube_nodes[count.index]
 
-  clone_id   = 9001
+  # ─── Clone using the template’s NAME (not clone_id) ─────────────────────────
+  clone      = "ubuntu-cloud"
   full_clone = true
 
-  cores     = 8
-  sockets   = 1
-  cpu_type  = "host"
-  memory    = 8192
+  # ─── CPU / RAM ──────────────────────────────────────────────────────────────
+  cores   = 8
+  sockets = 1
+  cpu     = "host"    # older versions expect `cpu`, not `cpu_type`
+  memory  = 8192
 
+  # ─── Root disk override (slot is implied to be 0) ───────────────────────────
   disk {
-    slot    = 0
     type    = "scsi"
     storage = "local-zfs"
     size    = "64G"
   }
 
+  # ─── Network (first NIC only; `id = 0` is implicit) ────────────────────────
   network {
-    id      = 0
     model   = "virtio"
     bridge  = "vmbr0"
     tag     = 2
     macaddr = local.mac_addrs[count.index]
   }
 
+  # ─── Cloud‑Init ────────────────────────────────────────────────────────────
   ciuser     = "ubuntu"
   sshkeys    = var.ssh_public_key
   ipconfig0  = "ip=${var.vm_ips[count.index]}/24,gw=${var.gateway}"
-  nameserver = var.dns_servers
+  nameserver = var.dns_servers    # now a comma‐separated string
 
+  # ─── Boot & QEMU Agent ─────────────────────────────────────────────────────
   onboot = true
   agent  = 1
 
