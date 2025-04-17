@@ -18,7 +18,7 @@ resource "proxmox_vm_qemu" "kube_node" {
   target_node = local.kube_nodes[count.index]
 
   # ─── Clone using the template’s NAME (not clone_id) ─────────────────────────
-  clone      = "ubuntu-kubernetes"
+  clone      = "kubernetes-cloud"
   full_clone = true
 
   # ─── CPU / RAM ──────────────────────────────────────────────────────────────
