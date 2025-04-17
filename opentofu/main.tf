@@ -1,59 +1,59 @@
+###############################################################################
+# Clone your ubuntu-cloud template (9001) onto three Proxmox nodes
+###############################################################################
+
 resource "proxmox_vm_qemu" "kube_node" {
   count = 3
-  name = "kube${count.index}"
-  desc = "Kubernetes node ${count.index} - Created by Terraform"
-  
-  # Node allocation - distribute across your 3 nodes
-  target_node = count.index == 0 ? "node0" : (count.index == 1 ? "node1" : "node2")
-  
-  # Clone from template VMID (9001) that lives on node0
-  clone      = 9001
-  clone_node = "node0"
-  
-  full_clone = true
-  
-  # VM specifications
-  cores = 8
-  sockets = 1
-  cpu = "host"
-  memory = 8192
-  
-  # Use local-zfs for OS disk
-  disk {
-    type = "scsi"
-    storage = "local-zfs"
-    size = "64G"
-  }
-  
-  # Network configuration with specific MAC addresses
-  network {
-    model = "virtio"
-    bridge = "vmbr0"
-    tag = 2
-    macaddr = count.index == 0 ? "bc:24:11:2b:e9:b9" : (count.index == 1 ? "bc:24:11:a4:f9:e7" : "bc:24:11:68:0b:b1")
-  }
-  
-  # Cloud-init settings
-  ciuser = "ubuntu"
-  sshkeys = var.ssh_public_key
-  
-  # Static IP configuration
-  ipconfig0 = "ip=${var.vm_ips[count.index]}/24,gw=${var.gateway}"
+  name  = "kube${count.index}"
+  desc  = "Kubernetes node ${count.index} - Created by Terraform"
 
-  # Set the nameserver to use your PiHole instances
+  # Distribute across your 3 Proxmox hosts
+  target_node = count.index == 0 ? "node0" : (count.index == 1 ? "node1" : "node2")
+
+  # ─── Use the numeric VMID for cloning ────────────────────────────────────────
+  clone_id   = 9001    # your ubuntu‑cloud template now on nfs‑datastore‑truenas0
+  full_clone = true
+
+  # ─── CPU / RAM ──────────────────────────────────────────────────────────────
+  cores     = 8
+  sockets   = 1
+  cpu_type  = "host"    # renamed from cpu = "host"
+  memory    = 8192
+
+  # ─── Root disk override to local-zfs (slot 0) ──────────────────────────────
+  disk {
+    slot    = 0
+    type    = "scsi"
+    storage = "local-zfs"
+    size    = "64G"
+  }
+
+  # ─── Network (slot 0) ──────────────────────────────────────────────────────
+  network {
+    id      = 0
+    model   = "virtio"
+    bridge  = "vmbr0"
+    tag     = 2
+    macaddr = count.index == 0 ? "bc:24:11:2b:e9:b9"
+            : (count.index == 1 ? "bc:24:11:a4:f9:e7"
+                                 : "bc:24:11:68:0b:b1")
+  }
+
+  # ─── Cloud‑Init ────────────────────────────────────────────────────────────
+  ciuser     = "ubuntu"
+  sshkeys    = var.ssh_public_key
+  ipconfig0  = "ip=${var.vm_ips[count.index]}/24,gw=${var.gateway}"
   nameserver = var.dns_servers
-  
-  # Ensure the VM starts on boot
+
+  # ─── Boot & QEMU Agent ─────────────────────────────────────────────────────
   onboot = true
-  
-  # VM agent
-  agent = 1
-  
-  # Added to prevent terraform from constantly seeing changes
+  agent  = 1
+
+  # ─── Prevent spurious diffs on network & OS defaults ────────────────────────
   lifecycle {
     ignore_changes = [
       network,
-      qemu_os
+      qemu_os,
     ]
   }
 }
