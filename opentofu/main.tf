@@ -23,26 +23,6 @@ resource "proxmox_vm_qemu" "kube_node" {
     size = "64G"
   }
   
-  # For node0 only, add the raw disk passthrough
-  dynamic "disk" {
-    for_each = count.index == 0 ? [1] : []
-    content {
-      type = "scsi"
-      file = "ata-Seagate_IronWolf_ZA2000NM10002-2ZG103_7TD003Q9"
-      format = "passthrough" 
-      size = "0"  # Size is ignored for passthrough
-    }
-  }
-  
-  # USB Passthrough configuration for node1 and node2
-  # Note: This is done via custom parameters since the provider doesn't support this directly
-  dynamic "usb" {
-    for_each = count.index == 1 || count.index == 2 ? [1] : []
-    content {
-      host = "174c:55aa"  # ASMedia SATA-to-USB bridge
-    }
-  }
-  
   # Network configuration
   network {
     model = "virtio"

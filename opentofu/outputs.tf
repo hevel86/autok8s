@@ -1,5 +1,3 @@
-# File: outputs.tf
-
 output "vm_ids" {
   value = proxmox_vm_qemu.kube_node.*.id
   description = "The IDs of the created VMs"
@@ -17,9 +15,20 @@ output "ssh_commands" {
   description = "SSH commands to connect to the VMs"
 }
 
+output "disk_passthrough_instructions" {
+  value = <<-EOT
+For node0 (kube0), run this command to pass through the disk:
+
+qm set <VMID_for_kube0> -scsi1 /dev/disk/by-id/ata-Seagate_IronWolf_ZA2000NM10002-2ZG103_7TD003Q9,backup=0
+
+Replace <VMID_for_kube0> with the actual VM ID from the vm_ids output.
+  EOT
+  description = "Instructions for setting up disk passthrough on node0"
+}
+
 output "usb_passthrough_instructions" {
   value = <<-EOT
-If USB passthrough doesn't work automatically, use these commands:
+For the USB disk passthroughs, use these commands:
 
 For kube1 (on node1):
 qm set <VMID_for_kube1> -usb0 host=174c:55aa
