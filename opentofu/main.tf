@@ -1,25 +1,3 @@
-###############################################################################
-# 1) Required Providers & Provider Config
-###############################################################################
-terraform {
-  required_providers {
-    proxmox = {
-      source  = "registry.terraform.io/telmate/proxmox"
-      version = "~> 2.9.0"
-    }
-  }
-}
-
-provider "proxmox" {
-  pm_api_url          = var.proxmox_api_url
-  pm_api_token_id     = var.proxmox_api_token_id
-  pm_api_token_secret = var.proxmox_api_token_secret
-  pm_tls_insecure     = true
-}
-
-###############################################################################
-# 2) Local lists for node placement & MACs
-###############################################################################
 locals {
   kube_nodes = ["node0", "node1", "node2"]
   mac_addrs  = [
@@ -29,13 +7,10 @@ locals {
   ]
 }
 
-###############################################################################
-# 3) Clone Template → VMs
-###############################################################################
 resource "proxmox_vm_qemu" "kube_node" {
   count       = length(local.kube_nodes)
   name        = "kube${count.index}"
-  desc        = "Kubernetes node ${count.index} - Created by Terraform"
+  desc        = "Kubernetes node ${count.index}"
   target_node = local.kube_nodes[count.index]
 
   clone_id   = 9001
