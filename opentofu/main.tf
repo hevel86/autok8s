@@ -18,7 +18,7 @@ resource "proxmox_vm_qemu" "kube_node" {
   target_node = local.kube_nodes[count.index]
 
   # ─── Clone using the template’s NAME (not clone_id) ─────────────────────────
-  clone      = "ubuntu-cloud"
+  clone      = "ubuntu-kubernetes"
   full_clone = true
 
   # ─── CPU / RAM ──────────────────────────────────────────────────────────────
@@ -28,11 +28,12 @@ resource "proxmox_vm_qemu" "kube_node" {
   memory  = 8192
 
   # ─── Root disk override (slot is implied to be 0) ───────────────────────────
-  disk {
-    type    = "scsi"
-    storage = "local-zfs"
-    size    = "64G"
-  }
+  # disk {
+  #   type    = "scsi"
+  #   storage = "local-zfs"
+  #   size    = "64G"
+  # }
+  # Root disk is not overwritten since we're now using a template with a 64GB base disk
 
   # ─── Network (first NIC only; `id = 0` is implicit) ────────────────────────
   network {
