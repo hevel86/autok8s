@@ -24,7 +24,7 @@ resource "proxmox_vm_qemu" "kube_node" {
   # ─── CPU / RAM ──────────────────────────────────────────────────────────────
   cores   = 8
   sockets = 1
-  cpu     = "host"    # older versions expect `cpu`, not `cpu_type`
+  cpu_type = "host"    # older versions expect `cpu`, not `cpu_type`
   memory  = 8192
 
   # ─── Root disk override (slot is implied to be 0) ───────────────────────────
