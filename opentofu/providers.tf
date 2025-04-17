@@ -2,7 +2,8 @@ terraform {
   required_providers {
     proxmox = {
       source  = "registry.terraform.io/telmate/proxmox"
-      version = "2.9.11" #pinned to release that doesn't have panic in prepareDiskSize
+      version = "3.0.1-rc8"
+
     }
   }
 }
