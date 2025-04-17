@@ -23,11 +23,12 @@ resource "proxmox_vm_qemu" "kube_node" {
     size = "64G"
   }
   
-  # Network configuration
+  # Network configuration with specific MAC addresses
   network {
     model = "virtio"
     bridge = "vmbr0"
     tag = 2
+    macaddr = count.index == 0 ? "bc:24:11:2b:e9:b9" : (count.index == 1 ? "bc:24:11:a4:f9:e7" : "bc:24:11:68:0b:b1")
   }
   
   # Cloud-init settings
