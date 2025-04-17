@@ -7,7 +7,7 @@ variable "proxmox_api_url" {
 variable "proxmox_api_token_id" {
   description = "Proxmox API token ID"
   type = string
-  default = "terraform"
+  default = "root@pam!terraform"  # Change this to match your actual token ID format
 }
 
 variable "proxmox_api_token_secret" {
