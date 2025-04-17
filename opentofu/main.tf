@@ -6,8 +6,10 @@ resource "proxmox_vm_qemu" "kube_node" {
   # Node allocation - distribute across your 3 nodes
   target_node = count.index == 0 ? "node0" : (count.index == 1 ? "node1" : "node2")
   
-  # Clone from template - specify the source node explicitly
-  clone = "node0:9001"
+  # Clone from template VMID (9001) that lives on node0
+  clone      = 9001
+  clone_node = "node0"
+  
   full_clone = true
   
   # VM specifications
