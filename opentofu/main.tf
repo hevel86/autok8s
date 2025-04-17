@@ -37,6 +37,7 @@ resource "proxmox_vm_qemu" "kube_node" {
 
   # ─── Network (first NIC only; `id = 0` is implicit) ────────────────────────
   network {
+    id      = 0
     model   = "virtio"
     bridge  = "vmbr0"
     tag     = 2
