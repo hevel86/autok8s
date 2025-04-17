@@ -6,8 +6,8 @@ resource "proxmox_vm_qemu" "kube_node" {
   # Node allocation - distribute across your 3 nodes
   target_node = count.index == 0 ? "node0" : (count.index == 1 ? "node1" : "node2")
   
-  # Clone from template
-  clone = var.template_vmid
+  # Clone from template - specify the source node explicitly
+  clone = "node0:9001"
   full_clone = true
   
   # VM specifications
@@ -54,20 +54,4 @@ resource "proxmox_vm_qemu" "kube_node" {
       qemu_os
     ]
   }
-}
-
-# Create inventory.tmpl file for Ansible
-resource "local_file" "inventory_template" {
-  content = <<-EOT
-[kube_masters]
-%{ for i, ip in var.vm_ips ~}
-kube${i} ansible_host=${ip}
-%{ endfor ~}
-
-[all:vars]
-ansible_user=ubuntu
-ansible_ssh_private_key_file=~/.ssh/id_rsa
-ansible_ssh_common_args='-o StrictHostKeyChecking=no'
-  EOT
-  filename = "${path.module}/../ansible/inventory/hosts.ini"
 }

@@ -17,12 +17,6 @@ variable "proxmox_api_token_secret" {
   default = "b66d8390-637a-4366-a6d5-62dd31736bbf"
 }
 
-variable "template_vmid" {
-  description = "The VMID of the Ubuntu Cloud QEMU template to clone"
-  type = number
-  default = 9001
-}
-
 variable "ssh_public_key" {
   description = "SSH public key for VM access"
   type = string
